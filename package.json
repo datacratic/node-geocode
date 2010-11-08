@@ -1,0 +1,11 @@
+{
+   "name": "node-geocode",
+   "version": "0.1.0",
+   "main": "index",
+   "description": "node wrapper around yahoo's placefinder api",
+   "author": "Braithwaite Patrick Sean <sean@recoset.com>",
+   "license": {
+       "type": "Apachev2",
+       "url": "http://www.apache.org/licenses/LICENSE-2.0"
+   }
+}
