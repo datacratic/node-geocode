@@ -1,6 +1,6 @@
 {
    "name": "node-geocode",
-   "version": "0.1.0",
+   "version": "0.2.0",
    "main": "index",
    "description": "node wrapper around yahoo's placefinder api",
    "author": "Braithwaite Patrick Sean <sean@recoset.com>",
