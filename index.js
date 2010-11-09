@@ -50,10 +50,10 @@ Connection.prototype.request = function (path, callback) {
             }
 
             if (result.ResultSet.Error === 0) {
+                that.pool.emit('success');
                 callback(null, result.ResultSet.Results);
             } else {
-                console.log('error using: ' + path);
-                that.pool.sequence.incrementDelay();
+                that.pool.emit('failure');
                 callback(new(Error)(result.ResultSet.ErrorMessage));
             }
         });
@@ -126,22 +126,27 @@ exports.Sequence = Sequence;
 var Pool = function (apiKey, rps) {
     this.queue = [];
     this.connections = [];
-    this.rps = rps || 1;
+    this.rps = rps || 10;
     this.sequence = new(Sequence)(1000);
     this.emitter = new EventEmitter;
 
+    for (var i = 0; i < this.rps; i++) {
+        this.connections.push(new(Connection)(apiKey, this));
+    }
+
     var that = this;
 
-    var drain = function () {
-        var action;
-        var connection;
-        console.log('queue: ' + that.queue.length);
+    this.emitter.on('success', that.sequence.incrementDelay);
+    this.emitter.on('failure', that.sequence.decrementDelay);
+
+    this.sequence.on('tick', function () {
+        var rps = that.rps;
         if (that.queue.length === 0) {
-            //that.sequence.stop();
+            that.sequence.stop();
         } else {
-            while (that.rps--) {
-                action = that.queue.pop();
-                connection = that.getConnection();
+            while (rps--) {
+                var action = that.queue.pop();
+                var connection = that.getConnection();
                 if (connection && action) {
                     connection.search(action.address, action.callback);
                 } else {
@@ -149,20 +154,7 @@ var Pool = function (apiKey, rps) {
                 }
             }
         }
-    }
-
-    this.sequence.on('tick', function () {
-        console.log('adding another 10');
-        that.rps = 10;
-        drain();
     });
-
-    this.sequence.on('tick', drain);
-    this.emitter.on('free', drain);
-
-    for (var i = 0; i < this.rps; i++) {
-        this.connections.push(new(Connection)(apiKey, this));
-    }
 };
 
 Pool.prototype.emit = function () { return this.emitter.emit.apply(this.emitter, arguments); }
